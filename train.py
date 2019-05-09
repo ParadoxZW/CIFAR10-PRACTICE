@@ -127,6 +127,7 @@ def train():
         except:
             log.info("=> failed to load checkpoint '{}'".format(args.resume))
             return
+    net = torch.nn.DataParallel(net)
     net.train()
 
     criterion = LabelSmoothing(10, 0.02)
