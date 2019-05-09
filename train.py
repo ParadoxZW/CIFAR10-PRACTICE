@@ -22,6 +22,7 @@ import torch.nn.functional as F
 from prefetch_generator import BackgroundGenerator
 from tensorboardX import SummaryWriter
 from FMPNet import FMPNet
+from tqdm import tqdm
 from criterion import LabelSmoothing
 from utils import accuracy, time, init_params
 
