@@ -3,6 +3,8 @@
     - time_stamp: generate timstamp
 '''
 import time
+import torch
+
 
 def init_params(net):
     '''Init layer parameters.'''
@@ -19,9 +21,11 @@ def init_params(net):
             if m.bias:
                 init.constant(m.bias, 0)
 
+
 def time_stamp():
     '''generate timstamp'''
-    return time.strftime("%m_%d_%H%M", time.localtime()) 
+    return time.strftime("%m_%d_%H%M", time.localtime())
+
 
 def accuracy(predict, target):
     '''compute accuracy'''

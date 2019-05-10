@@ -12,7 +12,7 @@ class LabelSmoothing(nn.Module):
     def forward(self, x, target):
         x = x.log()
         true_dist = x.data.clone()
-        true_dist.fill_(self.smoothing / (self.size-1))
+        true_dist.fill_(self.smoothing / (self.size - 1))
         true_dist.scatter_(1, target.data.unsqueeze(1), self.confidence)
         true_dist.requires_grad_(False)
         return self.criterion(x, true_dist)
