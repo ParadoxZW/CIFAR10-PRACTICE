@@ -24,7 +24,7 @@ from tensorboardX import SummaryWriter
 from FMPNet import FMPNet
 from tqdm import tqdm
 from criterion import LabelSmoothing
-from utils import accuracy, time, init_params
+from utils import accuracy, time_stamp, init_params
 
 logging.basicConfig(
     filename='logs/train.log',
@@ -33,7 +33,7 @@ logging.basicConfig(
 )
 log = logging.getLogger('train')
 
-# torch.backends.cudnn.benchmark = True
+torch.backends.cudnn.benchmark = True
 np.random.seed(1)
 torch.manual_seed(1)
 torch.cuda.manual_seed(1)
@@ -49,7 +49,7 @@ parser.add_argument('--epochs', default=200, type=int, metavar='N',
                     help='number of total epochs to run')
 # parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
 # help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch-size', default=100, type=int,
+parser.add_argument('-b', '--batch-size', default=200, type=int,
                     metavar='N', help='mini-batch size (default: 128)')
 parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
                     metavar='LR', help='initial learning rate')
@@ -87,7 +87,7 @@ augment = transforms.RandomChoice(
 )
 
 transform_train = transforms.Compose([
-    transforms.RandomApply([augment], p=0.5),
+    transforms.RandomApply([augment], p=0.7),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
@@ -100,14 +100,14 @@ transform_test = transforms.Compose([
 
 # don't forget to change download after download
 trainset = torchvision.datasets.CIFAR10(
-    root='./data', train=True, download=False, transform=transform_train)
+    root='./data', train=True, download=True, transform=transform_train)
 trainloader = Data.DataLoader(
-    trainset, batch_size=1000, shuffle=True, num_workers=args.workers)
+    trainset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
 
 testset = torchvision.datasets.CIFAR10(
-    root='./data', train=False, download=False, transform=transform_test)
+    root='./data', train=False, download=True, transform=transform_test)
 testloader = Data.DataLoader(
-    testset, batch_size=1000, shuffle=False, num_workers=args.workers)
+    testset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
 
 
 def train():
