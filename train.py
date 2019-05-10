@@ -47,14 +47,14 @@ parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
 parser.add_argument('--epochs', default=200, type=int, metavar='N',
                     help='number of total epochs to run')
-# parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
-# help='manual epoch number (useful on restarts)')
+parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
+                    help='manual epoch number (useful on restarts)')
 parser.add_argument('-b', '--batch-size', default=200, type=int,
                     metavar='N', help='mini-batch size (default: 128)')
 parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
                     metavar='LR', help='initial learning rate')
-# parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
-#                     help='momentum')
+parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
+                    help='momentum')
 parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
                     metavar='W', help='weight decay (default: 5e-4)')
 # parser.add_argument('--print-freq', '-p', default=50, type=int,
@@ -137,7 +137,8 @@ def train():
     net.train()
 
     criterion = LabelSmoothing(10, 0.02).cuda()
-    optim = torch.optim.Adam(net.parameters(), args.lr)
+    optim = torch.optim.SGD(net.parameters(), lr=args.lr,
+                            momentum=args.momentum, weight_decay=args.wd)
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optim,
                                                         milestones=[100, 150], last_epoch=start_epoch - 1)
 

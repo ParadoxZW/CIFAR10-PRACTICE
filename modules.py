@@ -37,7 +37,6 @@ class LayerNorm(nn.Module):
 class SublayerConnection(nn.Module):
     """
     A residual connection followed by a layer norm.
-    Note for code simplicity the norm is first as opposed to last.
     """
 
     def __init__(self, size, dropout):
@@ -55,7 +54,7 @@ class Self_Attn(nn.Module):
 
     def __init__(self, in_dim, activation):
         super(Self_Attn, self).__init__()
-        self.chanel_in = in_dim
+        self.channel_in = in_dim
         self.activation = activation
 
         self.query_conv = nn.Conv2d(
@@ -91,3 +90,71 @@ class Self_Attn(nn.Module):
 
         out = self.gamma * out + x
         return out, attention
+
+
+class BNConnection(nn.Module):
+    """
+    A residual connection followed by a batch normalization.
+    """
+
+    def __init__(self, channel):
+        super(BNConnection, self).__init__()
+        self.norm = nn.BatchNorm2d(channel)
+
+    def forward(self, x, sublayer):
+        "Apply residual connection to any sublayer with the same size."
+        return x + sublayer(self.norm(x))
+
+class DotConnection(nn.Module):
+    """
+    A residual connection when dimention increases.
+    """
+
+    def __init__(self, width, channel):
+        super(DotConnection, self).__init__()
+        self.norm = nn.BatchNorm2d(channel)
+        self.pooling = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.zeros = torch.zeros((128,  channel, int(width/2), int(width/2))).double() #!
+
+    def forward(self, x, sublayer):
+        "Apply residual connection to any sublayer with the increase size."
+        y = self.pooling(x)
+        y = torch.cat((y, self.zeros), 1)
+        return y + sublayer(self.norm(x))
+
+class ResBlock(nn.Module):
+    """
+    A block for building resnet.
+    """
+
+    def __init__(self, channels, kernal_size=3):
+        super(ResBlock, self).__init__()
+        c1 = nn.Conv2d(channels, channels,
+                            kernel_size=kernal_size, stride=1, padding=1)
+        c2 = nn.Conv2d(channels, channels,
+                            kernel_size=kernal_size, stride=1, padding=1)
+        self.conv = nn.Sequential(c1, c2)
+        self.shortcut = BNConnection(channels)
+
+    def forward(self, x):
+        "Apply residual connection to any sublayer with the same size."
+        return self.shortcut(x, self.conv)
+
+
+class SampleResBlock(nn.Module):
+    """
+    A block for building resnet.
+    """
+
+    def __init__(self, in_channels, in_width, kernal_size=3):
+        super(SampleResBlock, self).__init__()
+        c1 = nn.Conv2d(in_channels, in_channels*2,
+                       kernel_size=kernal_size, stride=2, padding=1)
+        c2 = nn.Conv2d(in_channels*2, in_channels*2,
+                       kernel_size=kernal_size, stride=1, padding=1)
+        self.conv = nn.Sequential(c1, c2)
+        self.shortcut = DotConnection(width=in_width, channel=in_channels)
+
+    def forward(self, x):
+        "Apply residual connection to any sublayer with the same size."
+        return self.shortcut(x, self.conv)
