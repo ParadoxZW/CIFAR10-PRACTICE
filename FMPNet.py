@@ -1,3 +1,7 @@
+# it doesn't work, still need debugging.
+# But I'm not interesting in this architecture any more.
+# So I just keep the code there
+
 from modules import FMPBlock, LayerNorm
 from torch import tensor
 import torch
@@ -5,8 +9,10 @@ import numpy as np
 import torch.nn.functional as F
 from torch import nn
 
+
 class DropoutFMP(nn.Module):
     "fractional max pooling with dropout"
+
     def __init__(self, size, out_channels, dropout=0):
         super(DropoutFMP, self).__init__()
         self.norm = LayerNorm(features=size)
@@ -45,6 +51,7 @@ class FMPNet(nn.Module):
         x = self.layers(x)
         b = x.size()[0]
         return F.softmax(self.l2(self.l1(x.view(b, -1))), dim=1)
+
 
 if __name__ == '__main__':
     net = FMPNet()
