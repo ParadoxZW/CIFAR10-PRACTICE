@@ -1,11 +1,14 @@
 '''
-implement some basic module and blocks for furthor building
+There are lots of basic module and blocks for furthor building.
+Some I haven't used but they are all interesting snippets so maybe
+I will use them someday. 
 '''
 from torch import nn
 import torch
 
 
 def Conv2d(in_channels, out_channels, kernel_size, stride, padding):
+    "return a block in the form of conv-bn-relu"
     conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
                      kernel_size=kernel_size, stride=stride, padding=padding)
     bn = nn.BatchNorm2d(out_channels)
@@ -101,7 +104,7 @@ class Self_Attn(nn.Module):
 
 class Connection(nn.Module):
     """
-    A residual connection followed by a batch normalization.
+    A residual connection.
     """
 
     def __init__(self, channel):
@@ -123,7 +126,7 @@ class DotConnection(nn.Module):
         # self.norm = nn.BatchNorm2d(channel)
         self.pooling = nn.AvgPool2d(kernel_size=2, stride=2, padding=0)
         self.zeros = torch.zeros(
-            (64,  channel, int(width / 2), int(width / 2))).double().cuda()  # set 128 channels if only one gpu
+            (128,  channel, int(width / 2), int(width / 2))).double()  # set 128 channels if only one gpu
 
     def forward(self, x, sublayer):
         "Apply residual connection to any sublayer with the increase size."

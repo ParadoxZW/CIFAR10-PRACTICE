@@ -168,10 +168,10 @@ def train():
             # flag = False
             for param in optim.param_groups:
                 param['lr'] *= 10
-        if epoch == 90:
+        if epoch == 90:  # about 35k iterations
             for param in optim.param_groups:
                 param['lr'] *= 0.1
-        if epoch == 135:
+        if epoch == 135: # about 50k iterations
             for param in optim.param_groups:
                 param['lr'] *= 0.1
         log.info('start epoch: ' + str(epoch) +
