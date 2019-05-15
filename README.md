@@ -13,8 +13,8 @@ rather than print function.
 I only tested ResNet with 110 layers. I will keep update for better
 performance and for other architechture.
 Model | Test accuracy 
------------- | -------------
-ResNet110 | 0.84 
+:-: | :-: 
+ResNet110 | 0.84
 ResNet110+Augmentation | 0.92 
 ## TODO
 - [ ] Improve test accuracy
