@@ -26,6 +26,8 @@ from ResNet import ResNet
 from tqdm import tqdm
 from criterion import LabelSmoothing
 from utils import accuracy, time_stamp, init_params
+from autoaugment import CIFAR10Policy
+from cutout import Cutout
 
 logging.basicConfig(
     filename='logs/train.log',
@@ -80,11 +82,11 @@ args = parser.parse_args()
 log.info('start training.')
 # Data
 log.info('==> Preparing data..')
-augment = transforms.RandomChoice(
-    [transforms.RandomAffine(degrees=2),
-     transforms.RandomCrop(32, padding=4)
-     ]
-)
+# augment = transforms.RandomChoice(
+#     [transforms.RandomAffine(degrees=2),
+#      transforms.RandomCrop(32, padding=4)
+#      ]
+# )
 # augment = transforms.RandomChoice(
 #     [transforms.RandomAffine(degrees=15, translate=(0.1, 0.1), scale=(0.8, 0.9), shear=0.9),
 #      transforms.RandomCrop(32, padding=4)
@@ -92,12 +94,20 @@ augment = transforms.RandomChoice(
 #      ]
 # )
 
-transform_train = transforms.Compose([
-    transforms.RandomApply([augment], p=0.5),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
+# transform_train = transforms.Compose([
+#     transforms.RandomApply([augment], p=0.5),
+#     transforms.RandomHorizontalFlip(),
+#     transforms.ToTensor(),
+#     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+# ])
+
+transform_train = transforms.Compose(
+     [transforms.RandomCrop(32, padding=4, fill=128),  # fill parameter needs torchvision installed from source
+      transforms.RandomHorizontalFlip(), CIFAR10Policy(),
+      transforms.ToTensor(),
+      # (https://github.com/uoguelph-mlrg/Cutout/blob/master/util/cutout.py)
+      Cutout(n_holes=1, length=16),
+      transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
 
 transform_test = transforms.Compose([
     transforms.ToTensor(),
