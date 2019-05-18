@@ -67,11 +67,11 @@ class Self_Attn(nn.Module):
         self.channel_in = in_dim
         self.activation = activation
 
-        self.query_conv = nn.Conv2d(
+        self.query_conv = Conv2d(padding=0, stride=1,
             in_channels=in_dim, out_channels=in_dim // 8, kernel_size=1)
-        self.key_conv = nn.Conv2d(
+        self.key_conv = Conv2d(padding=0, stride=1,
             in_channels=in_dim, out_channels=in_dim // 8, kernel_size=1)
-        self.value_conv = nn.Conv2d(
+        self.value_conv = Conv2d(padding=0, stride=1,
             in_channels=in_dim, out_channels=in_dim, kernel_size=1)
         self.gamma = nn.Parameter(torch.zeros(1))
 
@@ -99,7 +99,7 @@ class Self_Attn(nn.Module):
         out = out.view(m_batchsize, C, width, height)
 
         out = self.gamma * out + x
-        return out, attention
+        return out
 
 
 class Connection(nn.Module):
@@ -126,7 +126,7 @@ class DotConnection(nn.Module):
         # self.norm = nn.BatchNorm2d(channel)
         self.pooling = nn.AvgPool2d(kernel_size=2, stride=2, padding=0)
         self.zeros = torch.zeros(
-            (128,  channel, int(width / 2), int(width / 2))).double()  # set 128 channels if only one gpu
+            (64,  channel, int(width / 2), int(width / 2)), requires_grad=False).double().gpu()  # set 128 channels if only one gpu
 
     def forward(self, x, sublayer):
         "Apply residual connection to any sublayer with the increase size."
@@ -140,13 +140,15 @@ class ResBlock(nn.Module):
     A block for building resnet.
     """
 
-    def __init__(self, channels, kernel_size=3):
+    def __init__(self, channels, kernel_size=3, dropout_rate=0):
         super(ResBlock, self).__init__()
         c1 = Conv2d(channels, channels,
                     kernel_size=kernel_size, stride=1, padding=1)
         c2 = Conv2d(channels, channels,
                     kernel_size=kernel_size, stride=1, padding=1)
-        self.conv = nn.Sequential(c1, c2)
+        dropout = nn.Dropout(dropout_rate)
+        # self.conv = nn.Sequential(c1, c2)
+        self.conv = nn.Sequential(c1, dropout, c2)
         self.shortcut = Connection(channels)
 
     def forward(self, x):
@@ -159,13 +161,15 @@ class SampleResBlock(nn.Module):
     A block for building resnet.
     """
 
-    def __init__(self, in_channels, in_width, kernel_size=3):
+    def __init__(self, in_channels, in_width, kernel_size=3, dropout_rate=0):
         super(SampleResBlock, self).__init__()
         c1 = Conv2d(in_channels, in_channels * 2,
                     kernel_size=kernel_size, stride=2, padding=1)
         c2 = Conv2d(in_channels * 2, in_channels * 2,
                     kernel_size=kernel_size, stride=1, padding=1)
-        self.conv = nn.Sequential(c1, c2)
+        dropout = nn.Dropout(dropout_rate)
+        # self.conv = nn.Sequential(c1, c2)
+        self.conv = nn.Sequential(c1, dropout, c2)
         self.shortcut = DotConnection(width=in_width, channel=in_channels)
 
     def forward(self, x):

@@ -101,13 +101,14 @@ log.info('==> Preparing data..')
 #     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 # ])
 
-transform_train = transforms.Compose(
-     [transforms.RandomCrop(32, padding=4, fill=128),  # fill parameter needs torchvision installed from source
-      transforms.RandomHorizontalFlip(), CIFAR10Policy(),
-      transforms.ToTensor(),
-      # (https://github.com/uoguelph-mlrg/Cutout/blob/master/util/cutout.py)
-      Cutout(n_holes=1, length=16),
-      transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
+transform_train = transforms.Compose([
+    transforms.RandomCrop(32, padding=4, fill=128),  # fill parameter needs torchvision installed from source
+    transforms.RandomHorizontalFlip(), CIFAR10Policy(),
+    transforms.ToTensor(),
+    # (https://github.com/uoguelph-mlrg/Cutout/blob/master/util/cutout.py)
+    Cutout(n_holes=1, length=16),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+])
 
 transform_test = transforms.Compose([
     transforms.ToTensor(),
@@ -121,9 +122,9 @@ trainloader = Data.DataLoader(
     trainset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
 
 testset = torchvision.datasets.CIFAR10(
-    root='./data', train=False, download=False, transform=transform_test)
+    root='./data', train=False, download=False, transform=transform_test, drop_last=True)
 testloader = Data.DataLoader(
-    testset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
+    testset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, drop_last=True)
 
 
 def train():
@@ -190,8 +191,6 @@ def train():
         for i, data in pbar:
             # data preparation
             X, target = data
-            if X.shape[0] != 128:
-                 break
             X = X.double().cuda()
             target = target.cuda()
 
@@ -225,37 +224,36 @@ def train():
         # maybe do a test pass every x epochs
         x = 5
         if epoch % x == x - 1:
-            # bring models to evaluation mode
-            net.eval()
-            #do some tests
-            pbar = tqdm(enumerate(BackgroundGenerator(testloader)),
-                        total=len(testloader))
-            cnt = 0
-            test_acc = 0
-            for i, data in pbar:
-                X, target = data
-                if X.shape[0] != 128:
-                    break
-                X = X.double().cuda()
-                target = target.cuda()
-                out = net(X)
-                test_loss = criterion(out, target)
-                test_loss_ = loss.item()
-                test_acc += accuracy(out, target)
-                cnt += 1
-            test_acc /= cnt
-            log.info('test accuracy: %6.3f' % (test_acc))
-            writer.add_scalars('loss', {'test': test_loss_}, n_iter)
-            writer.add_scalars('acc', {'test': test_acc}, n_iter)
-            # save checkpoint if needed
-            state = {
-                'net': net.state_dict(),
-                'epoch': epoch,
-                'n_iter': n_iter
-            }
-            torch.save(state,
-                       args.save_dir + '/' + time_stamp() + '_' +
-                       str(epoch) + '_' + str(test_acc) + '.pkl')
+            with torch.no_grads():
+                # bring models to evaluation mode
+                net.eval()
+                #do some tests
+                pbar = tqdm(enumerate(BackgroundGenerator(testloader)),
+                            total=len(testloader))
+                cnt = 0
+                test_acc = 0
+                for i, data in pbar:
+                    X, target = data
+                    X = X.double().cuda()
+                    target = target.cuda()
+                    out = net(X)
+                    test_loss = criterion(out, target)
+                    test_loss_ = loss.item()
+                    test_acc += accuracy(out, target)
+                    cnt += 1
+                test_acc /= cnt
+                log.info('test accuracy: %6.3f' % (test_acc))
+                writer.add_scalars('loss', {'test': test_loss_}, n_iter)
+                writer.add_scalars('acc', {'test': test_acc}, n_iter)
+                # save checkpoint if needed
+                state = {
+                    'net': net.state_dict(),
+                    'epoch': epoch,
+                    'n_iter': n_iter
+                }
+                torch.save(state,
+                           args.save_dir + '/' + time_stamp() + '_' +
+                           str(epoch) + '_' + str(test_acc) + '.pkl')
     writer.close()
 
 
