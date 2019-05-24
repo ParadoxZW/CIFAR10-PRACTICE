@@ -9,9 +9,12 @@ rather than print function.
 __update May 17th, 2019:__ I tried the augmentation found by AutoAugment, while still using
 origin model architecture. And I got 0.94 accuracy.
 
+__update May 24th, 2019:__ I've got 0.96 accuracy on cifar10. I think it's enough. This repo then
+will be used to keep track about my ideas, my fun of implementing interesting architectures.
+
 ## Environment
 
-- hardware: 2 GPUs
+- Hardware: 2 GPUs
 - Software: Pytorch, prefetch_generator, tensorboardX, tqdm
 
 ## Result
@@ -21,6 +24,7 @@ origin model architecture. And I got 0.94 accuracy.
 | ResNet110              | 0.84          |
 | ResNet110+Augmentation | 0.92          |
 | ResNet110+AutoAugment  | 0.94          |
+| WRN40+AutoAugment      | 0.96          |
 
 I only tested ResNet with 110 layers. I will keep update for better
 performance and for other architechture.

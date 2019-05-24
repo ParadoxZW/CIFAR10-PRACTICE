@@ -196,7 +196,7 @@ def train():
 
             # It's very good practice to keep track of preparation time and
             # computation time using tqdm to find any issues in your dataloader
-            prepare_time = start_time - time.time()
+            prepare_time = time.time() - start_time
 
             # forward and backward pass
             out = net(X)
@@ -215,14 +215,24 @@ def train():
                 writer.add_scalars('acc', {'train': acc}, n_iter)
             n_iter += 1
             # compute computation time and *compute_efficiency*
-            process_time = start_time - time.time() - prepare_time
-            pbar.set_description("Ef:%2.1f|l:%6.3f|ep%3d" % (
-                process_time / (process_time + prepare_time), loss_, epoch))
+            process_time = time.time() - start_time - prepare_time
+            pbar.set_description("%2.1f|%2.f|l:%6.3f|ep%3d" % (
+                prepare_time, process_time, loss_, epoch))
             start_time = time.time()
         # change lr if needed
         # lr_scheduler.step()
-        # maybe do a test pass every x epochs
         x = 5
+        # save checkpoint if needed
+        if epoch % (2*x) == (2*x) - 1:
+            state = {
+                'net': net.state_dict(),
+                'epoch': epoch,
+                'n_iter': n_iter
+            }
+            torch.save(state,
+                       args.save_dir + '/' + time_stamp() + '_' +
+                       str(epoch) + '_' + '%.4f'%(test_acc) + '.pkl')
+        # maybe do a test pass every x epochs
         if epoch % x == x - 1:
             with torch.no_grads():
                 # bring models to evaluation mode
@@ -245,15 +255,6 @@ def train():
                 log.info('test accuracy: %6.3f' % (test_acc))
                 writer.add_scalars('loss', {'test': test_loss_}, n_iter)
                 writer.add_scalars('acc', {'test': test_acc}, n_iter)
-                # save checkpoint if needed
-                state = {
-                    'net': net.state_dict(),
-                    'epoch': epoch,
-                    'n_iter': n_iter
-                }
-                torch.save(state,
-                           args.save_dir + '/' + time_stamp() + '_' +
-                           str(epoch) + '_' + str(test_acc) + '.pkl')
     writer.close()
 
 

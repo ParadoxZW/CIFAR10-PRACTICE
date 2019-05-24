@@ -175,3 +175,45 @@ class SampleResBlock(nn.Module):
     def forward(self, x):
         "Apply residual connection to any sublayer with the same size."
         return self.shortcut(x, self.conv)
+
+class Channel_Attn(nn.Module):
+    "just an idea"
+
+    def __init__(self, in_dim, N):
+        "N = W * H"
+        super(Channel_Attn, self).__init__()
+        self.channel_in = in_dim
+
+        self.query_conv = Conv2d(padding=0, stride=1,
+            in_channels=in_dim, out_channels=in_dim // 8, kernel_size=1)
+        self.key_conv = Conv2d(padding=0, stride=1,
+            in_channels=in_dim, out_channels=in_dim // 8, kernel_size=1)
+        self.value_conv = Conv2d(padding=0, stride=1,
+            in_channels=in_dim, out_channels=N, kernel_size=1)
+        self.attn_conv = Conv2d(padding=0, stride=1,
+            in_channels=N, out_channels=dim, kernel_size=1)
+
+        self.softmax = nn.Softmax(dim=-1)
+
+    def forward(self, x):
+        """
+            N == C
+            inputs :
+                x : input feature maps( B X C X W X H)
+            returns :
+                out : self attention value + input feature 
+                attention: B X N X N (N is Width*Height)
+        """
+        m_batchsize, C, width, height = x.size()
+        proj_query = self.query_conv(x).view(
+            m_batchsize, -1, width * height) # B X CX(N)
+        proj_key = self.key_conv(x).view(
+            m_batchsize, -1, width * height).permute(0, 2, 1)   # B X C x (*W*H)
+        energy = torch.bmm(proj_key, proj_query)  # transpose check
+        attention = self.softmax(energy).view(m_batchsize, -1, width, height)  # BX (N) X (N)
+        proj_value = self.value_conv(x)
+
+        out = proj_value * attention
+
+        out = self.attn_conv(x) + x
+        return out

@@ -1,4 +1,4 @@
-# this code is work, I've 92% accuracy on test set
+# this code is work, I've 96% accuracy on test set
 from modules import ResBlock, SampleResBlock, Conv2d
 from torch import tensor
 import torch
