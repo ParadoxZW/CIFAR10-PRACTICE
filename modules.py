@@ -4,6 +4,7 @@ Some I haven't used but they are all interesting snippets so maybe
 I will use them someday. 
 '''
 from torch import nn
+import torch.nn.functional as F
 import torch
 
 
@@ -149,6 +150,44 @@ class ResBlock(nn.Module):
         dropout = nn.Dropout(dropout_rate)
         # self.conv = nn.Sequential(c1, c2)
         self.conv = nn.Sequential(c1, dropout, c2)
+        self.shortcut = Connection(channels)
+
+    def forward(self, x):
+        "Apply residual connection to any sublayer with the same size."
+        return self.shortcut(x, self.conv)
+
+
+class Se(nn.Module):
+    """
+    SEnet.
+    """
+
+    def __init__(self, channels):
+        super(Se, self).__init__()
+        self.GlobalAvgPooling = nn.AdaptiveAvgPool2d(1)
+        self.fc1 = Conv2d(channels, channels//8, kernel_size=1, stride=1, padding=0)
+        self.fc2 = Conv2d(channels//8, channels, kernel_size=1, stride=1, padding=0)
+
+    def forward(self, x):
+        a = self.GlobalAvgPooling(x)
+        a = self.fc1(a)
+        a = self.fc2(a)
+        a = F.sigmoid(a)
+        return a * x
+
+class SeResBlock(nn.Module):
+    """
+    A block for building resnet.
+    """
+
+    def __init__(self, channels, kernel_size=3, dropout_rate=0):
+        super(SeResBlock, self).__init__()
+        c1 = Conv2d(channels, channels,
+                    kernel_size=kernel_size, stride=1, padding=1)
+        c2 = Conv2d(channels, channels,
+                    kernel_size=kernel_size, stride=1, padding=1)
+        # self.conv = nn.Sequential(c1, c2)
+        self.conv = nn.Sequential(c1, Se(channels), c2, Se(channels))
         self.shortcut = Connection(channels)
 
     def forward(self, x):
